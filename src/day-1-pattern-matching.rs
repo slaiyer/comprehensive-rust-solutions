@@ -117,3 +117,27 @@ fn test_error() {
         Err(String::from("division by zero"))
     );
 }
+
+#[test]
+fn test_overflow() {
+    assert_eq!(
+        eval(Expression::Op {
+            op: Operation::Add,
+            left: Box::new(Expression::Value(i64::max_value())),
+            right: Box::new(Expression::Value(1)),
+        }),
+        Err(String::from("overflow"))
+    );
+}
+
+#[test]
+fn test_underflow() {
+    assert_eq!(
+        eval(Expression::Op {
+            op: Operation::Sub,
+            left: Box::new(Expression::Value(i64::min_value())),
+            right: Box::new(Expression::Value(1)),
+        }),
+        Err(String::from("overflow"))
+    );
+}
