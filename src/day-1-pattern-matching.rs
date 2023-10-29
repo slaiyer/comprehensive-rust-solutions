@@ -1,5 +1,5 @@
 /// An operation to perform on two subexpressions.
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug)]
 enum Operation {
     Add,
     Sub,
@@ -7,8 +7,20 @@ enum Operation {
     Div,
 }
 
+impl Operation {
+    fn operate(&self, left: i64, right: i64) -> Option<i64> {
+        let op = match &self {
+            Operation::Add => i64::checked_add,
+            Operation::Sub => i64::checked_sub,
+            Operation::Mul => i64::checked_mul,
+            Operation::Div => i64::checked_div,
+        };
+
+        op(left, right)
+    }
+}
+
 /// An expression, in tree form.
-#[derive(Debug)]
 enum Expression {
     /// An operation on two subexpressions.
     Op {
@@ -22,7 +34,7 @@ enum Expression {
 }
 
 /// The result of evaluating an expression.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 enum Res {
     /// Evaluation was successful, with the given result.
     Ok(i64),
@@ -42,24 +54,12 @@ fn eval(e: Expression) -> Res {
 fn operate(op: Operation, left: Res, right: Res) -> Res {
     match (&op, left, right) {
         (Operation::Div, _, Ok(0)) => Err(String::from("division by zero")),
-        (_, Ok(l), Ok(r)) => checked_operate(op, l, r),
+        (_, Ok(l), Ok(r)) =>
+            match op.operate(l, r) {
+                Some(v) => Ok(v),
+                None => Err(String::from("overflow")),
+            },
         (_, Err(e), _) | (_, _, Err(e)) => Err(e),
-    }
-}
-
-fn checked_operate(op: Operation, l: i64, r: i64) -> Res {
-    match get_checked_fn(op)(l, r) {
-        Some(v) => Ok(v),
-        None => Err(String::from("overflow")),
-    }
-}
-
-fn get_checked_fn(op: Operation) -> fn(i64, i64) -> Option<i64> {
-    match op {
-        Operation::Add => i64::checked_add,
-        Operation::Sub => i64::checked_sub,
-        Operation::Mul => i64::checked_mul,
-        Operation::Div => i64::checked_div,
     }
 }
 
