@@ -2,6 +2,7 @@ type PathFragIter<'a> = std::str::Split<'a, char>;
 const PATH_SEP: char = '/';
 const WILDCARD: &str = "*";
 
+/// Supports glob matching on path fragments.
 fn prefix_matches(prefix: &str, request_path: &str) -> bool {
     let mut p_it: PathFragIter = prefix.split(PATH_SEP);
     let mut r_it: PathFragIter = request_path.split(PATH_SEP);
@@ -30,6 +31,7 @@ fn match_glob(p_it: &mut PathFragIter, r_it: &mut PathFragIter) -> bool {
     }
 }
 
+/// Halts on first matching fragment in request path.
 fn match_lookahead(p_frag: &str, r_it: &mut PathFragIter) -> bool {
     loop {
         match r_it.next() {
