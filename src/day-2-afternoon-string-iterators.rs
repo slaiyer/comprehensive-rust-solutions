@@ -9,11 +9,15 @@ fn prefix_matches(prefix: &str, request_path: &str) -> bool {
 
     loop {
         match (p_it.next(), r_it.next()) {
-            (None, None) => return true,
-            (None, Some(_)) => return true,
+            (None, _) => return true,
+            (Some(WILDCARD), Some(_)) => {
+                if match_glob(&mut p_it, &mut r_it) {
+                    continue;
+                } else {
+                    return false;
+                }
+            }
             (Some(p_frag), Some(r_frag)) if p_frag == r_frag => advance(&mut p_it, &mut r_it),
-            (Some(p_frag), Some(r_frag)) if p_frag != WILDCARD && p_frag != r_frag => return false,
-            (Some(WILDCARD), Some(_)) => return match_glob(&mut p_it, &mut r_it),
             _ => return false,
         }
     }
@@ -26,8 +30,8 @@ fn advance(p_it: &mut PathFragIter, r_it: &mut PathFragIter) {
 
 fn match_glob(p_it: &mut PathFragIter, r_it: &mut PathFragIter) -> bool {
     match p_it.next() {
-        None => return true,
-        Some(p_frag) => return match_lookahead(p_frag, r_it),
+        None => true,
+        Some(p_frag) => match_lookahead(p_frag, r_it),
     }
 }
 
