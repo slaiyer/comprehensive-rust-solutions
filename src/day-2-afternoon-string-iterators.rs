@@ -12,7 +12,7 @@ fn prefix_matches(prefix: &str, request_path: &str) -> bool {
             (None, Some(_)) => return true,
             (Some(&p_frag), Some(&r_frag)) if p_frag == r_frag => advance(&mut p_it, &mut r_it),
             (Some(&p_frag), Some(&r_frag)) if p_frag != WILDCARD && p_frag != r_frag => return false,
-            (Some(&WILDCARD), Some(_)) => return glob_match(&mut p_it, &mut r_it),
+            (Some(&WILDCARD), Some(_)) => return match_glob(&mut p_it, &mut r_it),
             _ => return false,
         }
     }
@@ -23,18 +23,22 @@ fn advance(p_it: &mut PathFragIter, r_it: &mut PathFragIter) {
     r_it.next();
 }
 
-fn glob_match(p_it: &mut PathFragIter, r_it: &mut PathFragIter) -> bool {
-    p_it.next();
+fn match_glob(p_it: &mut PathFragIter, r_it: &mut PathFragIter) -> bool {
+    p_it.next();  // consume the wildcard
 
     match p_it.peek() {
         None => return true,
-        Some(&p_frag) => loop {
-            match r_it.next() {
-                Some(r_frag) if p_frag == r_frag => return true,
-                Some(_) => continue,
-                None => return false,
-            }
-        },
+        Some(&p_frag) => return match_lookahead(p_frag, r_it),
+    }
+}
+
+fn match_lookahead(p_frag: &str, r_it: &mut PathFragIter) -> bool {
+    loop {
+        match r_it.next() {
+            Some(r_frag) if p_frag == r_frag => return true,
+            Some(_) => continue,
+            None => return false,
+        }
     }
 }
 
