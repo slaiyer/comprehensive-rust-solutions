@@ -10,14 +10,8 @@ fn prefix_matches(prefix: &str, request_path: &str) -> bool {
     loop {
         match (p_it.next(), r_it.next()) {
             (None, _) => return true,
-            (Some(WILDCARD), Some(_)) => {
-                if match_glob(&mut p_it, &mut r_it) {
-                    continue;
-                } else {
-                    return false;
-                }
-            }
             (Some(p_frag), Some(r_frag)) if p_frag == r_frag => advance(&mut p_it, &mut r_it),
+            (Some(WILDCARD), Some(_)) if !match_glob(&mut p_it, &mut r_it) => return false,
             _ => return false,
         }
     }
