@@ -1,35 +1,40 @@
-pub fn prefix_matches(prefix: &str, request_path: &str) -> bool {
-    let mut prefix_parts = prefix.split('/').peekable();
-    let mut request_path_parts = request_path.split('/').peekable();
+type PathFragIter<'a> = std::iter::Peekable<std::str::Split<'a, char>>;
+const PATH_SEP: char = '/';
+const WILDCARD: &str = "*";
+
+fn prefix_matches(prefix: &str, request_path: &str) -> bool {
+    let mut p_it: PathFragIter = prefix.split(PATH_SEP).peekable();
+    let mut r_it: PathFragIter = request_path.split(PATH_SEP).peekable();
 
     loop {
-        match (prefix_parts.peek(), request_path_parts.peek()) {
-            (None, Some(_)) => return true,
-            (Some(prefix_part), Some(request_path_part))
-                if *prefix_part == *request_path_part => {
-                    prefix_parts.next();
-                    request_path_parts.next();
-                },
-            (Some(prefix_part), Some(request_path_part))
-                if *prefix_part != "*" && *prefix_part != *request_path_part => return false,
-            (Some(&"*"), Some(_)) => {
-                prefix_parts.next();
-                match prefix_parts.peek() {
-                    Some(&prefix_part_needle) => {
-                        loop {
-                            match request_path_parts.next() {
-                                Some(request_path_part_next) if prefix_part_needle == request_path_part_next => return true,
-                                Some(_) => continue,
-                                None => return false,
-                            }
-                        }
-                    },
-                    None => return true,
-                }
-            },
+        match (p_it.peek(), r_it.peek()) {
             (None, None) => return true,
+            (None, Some(_)) => return true,
+            (Some(&p_frag), Some(&r_frag)) if p_frag == r_frag => advance(&mut p_it, &mut r_it),
+            (Some(&p_frag), Some(&r_frag)) if p_frag != WILDCARD && p_frag != r_frag => return false,
+            (Some(&WILDCARD), Some(_)) => return glob_match(&mut p_it, &mut r_it),
             _ => return false,
         }
+    }
+}
+
+fn advance(p_it: &mut PathFragIter, r_it: &mut PathFragIter) {
+    p_it.next();
+    r_it.next();
+}
+
+fn glob_match(p_it: &mut PathFragIter, r_it: &mut PathFragIter) -> bool {
+    p_it.next();
+
+    match p_it.peek() {
+        None => return true,
+        Some(&p_frag) => loop {
+            match r_it.next() {
+                Some(r_frag) if p_frag == r_frag => return true,
+                Some(_) => continue,
+                None => return false,
+            }
+        },
     }
 }
 
