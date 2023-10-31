@@ -54,11 +54,10 @@ fn eval(e: Expression) -> Res {
 fn operate(op: Operation, left: Res, right: Res) -> Res {
     match (&op, left, right) {
         (Operation::Div, _, Ok(0)) => Err(String::from("division by zero")),
-        (_, Ok(l), Ok(r)) =>
-            match op.operate(l, r) {
-                Some(v) => Ok(v),
-                None => Err(String::from("overflow")),
-            },
+        (_, Ok(l), Ok(r)) => match op.operate(l, r) {
+            Some(v) => Ok(v),
+            None => Err(String::from("overflow")),
+        },
         (_, Err(e), _) | (_, _, Err(e)) => Err(e),
     }
 }
